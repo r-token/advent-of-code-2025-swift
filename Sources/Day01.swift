@@ -20,25 +20,60 @@ struct Day01: AdventDay {
     case left, right, unknown
   }
 
-  private func rotate(_ direction: Direction, from initial: Int, clicks: Int) -> Int {
-    var normalizedClicks = clicks > 99 ? clicks%100 : clicks
+  private struct RotationResult {
+    var newPosition: Int
+    var timesPassedZero: Int
+  }
+
+  private func rotate(_ direction: Direction, from initial: Int, clicks: Int) -> RotationResult {
+    let normalizedClicks = clicks > 99 ? clicks%100 : clicks
+    var rotationResult = RotationResult(newPosition: 0, timesPassedZero: 0)
 
     switch direction {
     case .left:
       if initial - normalizedClicks < 0 {
-        return (initial - normalizedClicks) + 100
+        rotationResult.newPosition = (initial - normalizedClicks) + 100
       } else {
-        return initial - normalizedClicks
+        rotationResult.newPosition = initial - normalizedClicks
       }
     case .right:
       if initial + normalizedClicks > 99 {
-        return (initial + normalizedClicks) - 100
+        rotationResult.newPosition = (initial + normalizedClicks) - 100
       } else {
-        return initial + normalizedClicks
+        rotationResult.newPosition = initial + normalizedClicks
       }
     case .unknown:
-      return 0
+      break
     }
+
+    rotationResult.timesPassedZero = getTimesPassedZero(direction: direction, from: initial, clicks: clicks)
+
+    return rotationResult
+  }
+
+  private func getTimesPassedZero(direction: Direction, from initial: Int, clicks: Int) -> Int {
+    var timesPassedZero = 0
+    let leftRotatingArray = (initial-clicks...initial).reversed()
+    let rightRotatingArray = initial...initial+clicks
+
+    switch direction {
+    case .left:
+      for (idx, number) in leftRotatingArray.enumerated() {
+        if number % 100 == 0 && idx != 0 {
+          timesPassedZero += 1
+        }
+      }
+    case .right:
+      for (idx, number) in rightRotatingArray.enumerated() {
+        if number % 100 == 0 && idx != 0 {
+          timesPassedZero += 1
+        }
+      }
+    case .unknown:
+      break
+    }
+
+    return timesPassedZero
   }
 
   private func parseDirection(from input: String) -> Direction {
@@ -66,11 +101,11 @@ struct Day01: AdventDay {
 
       switch direction {
       case .left:
-        currentPosition = rotate(.left, from: currentPosition, clicks: amount)
+        currentPosition = rotate(.left, from: currentPosition, clicks: amount).newPosition
       case .right:
-        currentPosition = rotate(.right, from: currentPosition, clicks: amount)
+        currentPosition = rotate(.right, from: currentPosition, clicks: amount).newPosition
       case .unknown:
-        break
+        continue
       }
 
       if currentPosition == 0 {
@@ -81,11 +116,28 @@ struct Day01: AdventDay {
     return zeroCounter
   }
 
-  // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Any {
-    // Sum the maximum entries in each set of data
-    // entities.map { $0.max() ?? 0 }.reduce(0, +)
-    return 0
+    var currentPosition = 50
+    var timesPassedZero = 0
+
+    for entity in entities {
+      let direction = parseDirection(from: entity)
+      let amount = parseClickAmount(from: entity)
+
+      switch direction {
+      case .left:
+        let rotationResult = rotate(.left, from: currentPosition, clicks: amount)
+        currentPosition = rotationResult.newPosition
+        timesPassedZero += rotationResult.timesPassedZero
+      case .right:
+        let rotationResult = rotate(.right, from: currentPosition, clicks: amount)
+        currentPosition = rotationResult.newPosition
+        timesPassedZero += rotationResult.timesPassedZero
+      case .unknown:
+        continue
+      }
+    }
+
+    return timesPassedZero
   }
 }
-
