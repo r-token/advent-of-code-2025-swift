@@ -31,7 +31,7 @@ struct Day02: AdventDay {
     return Range(begin: beginRange, end: endRange)
   }
 
-  private func isInvalidID(_ id: Int) -> Bool {
+  private func isInvalidIDPart1(_ id: Int) -> Bool {
     guard id >= 10 else { return false }
 
     let stringId = String(id)
@@ -51,7 +51,7 @@ struct Day02: AdventDay {
     for entity in entities {
       let range = parseRanges(from: entity)
       for id in range.begin...range.end {
-        if isInvalidID(id) {
+        if isInvalidIDPart1(id) {
           invalidIDSum += id
         }
       }
@@ -64,79 +64,33 @@ struct Day02: AdventDay {
     guard id >= 10 else { return false }
 
     let stringId = String(id)
-    let idCount = stringId.count
     // IDs can't start with 0
     guard stringId.first != "0" else { return false }
 
-    switch idCount {
-    case 4:
-      return isAllOneNumber(stringId) || isTwoPairs(stringId)
-    case 6:
-      return isAllOneNumber(stringId) || isTwoPairs(stringId) || isThreePairs(stringId)
-    case 8:
-      return isAllOneNumber(stringId) || isTwoPairs(stringId) || isFourPairs(stringId)
-    case 9:
-      return isAllOneNumber(stringId) || isThreePairs(stringId)
-    case 10:
-      return isAllOneNumber(stringId) || isTwoPairs(stringId) || isFivePairs(stringId)
-    default:
-      return isAllOneNumber(stringId)
-    }
+    return isRepeatingPattern(stringId)
   }
 
-  private func isTwoPairs(_ stringId: String) -> Bool {
-    let numberPrefix = stringId.dropLast(stringId.count/2)
-    let numberSuffix = stringId.dropFirst(stringId.count/2)
-    return numberPrefix == numberSuffix
-  }
+  private func isRepeatingPattern(_ stringId: String) -> Bool {
+    let length = stringId.count
 
-  private func isThreePairs(_ stringId: String) -> Bool {
-    let count = Double(stringId.count)
-    let firstThird = stringId.dropLast(Int(count/1.5))
-    let middleThird = stringId.dropFirst(Int(count/3)).dropLast(Int(count)/3)
-    let lastThird = stringId.dropFirst(Int(count/1.5))
-    return firstThird == middleThird && firstThird == lastThird
-  }
+    // Try all possible pattern lengths (divisors of length)
+    // Pattern must repeat at least twice, so pattern length <= length/2
+    for patternLength in 1...(length / 2) {
+      // Only check if patternLength evenly divides length
+      guard length % patternLength == 0 else { continue }
 
-  private func isFourPairs(_ stringId: String) -> Bool {
-    let count = Double(stringId.count)
-    let firstQuarter = stringId.dropLast(Int(count/1.333333333333333))
-    let secondQuarter = stringId.dropFirst(Int(count/4)).dropLast(Int(count/2))
-    let thirdQuarter = stringId.dropFirst(Int(count/2)).dropLast(Int(count/4))
-    let lastQuarter = stringId.dropFirst(Int(count/1.333333333333333))
-    return firstQuarter == secondQuarter &&
-      firstQuarter == thirdQuarter &&
-      firstQuarter == lastQuarter
-  }
+      // Extract the pattern (first patternLength characters)
+      let pattern = stringId.prefix(patternLength)
 
-  private func isFivePairs(_ stringId: String) -> Bool {
-    let count = Double(stringId.count)
-    let firstFifth = stringId.dropLast(Int(count/1.25))
-    let secondFifth = stringId.dropFirst(Int(count/5)).dropLast(Int(count/1.66666666666666))
-    let thirdFifth = stringId.dropFirst(Int(count/2.5)).dropLast(Int(count/2.5))
-    let fourthFifth = stringId.dropFirst(Int(count/1.66666666666666)).dropLast(Int(count/5))
-    let lastFifth = stringId.dropFirst(Int(count/1.25))
-    return firstFifth == secondFifth &&
-      firstFifth == thirdFifth &&
-      firstFifth == fourthFifth &&
-      firstFifth == lastFifth
-  }
+      // Check if the entire string is this pattern repeated
+      let expectedString = String(repeating: String(pattern), count: length / patternLength)
 
-  private func isAllOneNumber(_ stringId: String) -> Bool {
-    var allOneNumber = true
-    var prevChar: Character?
-    for (idx, char) in stringId.enumerated() {
-      if idx == 0 {
-        prevChar = char
-        continue
-      } else {
-        if prevChar != char {
-          allOneNumber = false
-          break
-        }
+      if stringId == expectedString {
+        return true
       }
     }
-    return allOneNumber
+
+    return false
   }
 
   func part2() -> Any {
